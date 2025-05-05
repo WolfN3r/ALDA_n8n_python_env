@@ -7,7 +7,7 @@ services:
     ports:
       - "5678:5678"
     volumes:
-      - ./.n8n:/home/node/.n8n      # persistuje nastavení n8n
+      - ./n8n:/home/node/.n8n      # persistuje nastavení n8n
       - ./scripts:/home/node/scripts # vaše Python skripty
       - ./logs:/home/node/logs     # výstupní logy
       # Pro X11 forwarding odkomentujte:
