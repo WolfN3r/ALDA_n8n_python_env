@@ -1,0 +1,225 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "2065f79c-d487-47ac-8428-b770a74bc3cd",
+      "name": "When clicking \"Execute Workflow\"",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        700,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "Hello",
+              "value": "World"
+            }
+          ],
+          "number": [
+            {
+              "name": "Val",
+              "value": 5
+            },
+            {
+              "name": "Pi",
+              "value": 3.14
+            }
+          ],
+          "boolean": [
+            {
+              "name": "IsItTrue",
+              "value": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6c3b1bae-2724-4f1b-b8fb-3dfcdba739b9",
+      "name": "Set",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        920,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\n\n# Připravíme payload: items je vestavěná proměnná n8n (list of dicts)\npayload = items\n\n# Spustíme externí skript s předáním JSON na stdin\nproc = subprocess.Popen(\n    ['python3', './scripts/example/02_findInt.py'],\n    stdin=subprocess.PIPE,\n    stdout=subprocess.PIPE,\n    stderr=subprocess.PIPE,\n    text=True,\n)\n\nstdout, stderr = proc.communicate(json.dumps(payload))\n\n# Pokud skript něco vyhodil na stderr, zalogujeme to\nif stderr:\n    print(stderr, file=sys.stderr)\n\n# Parsujeme JSON výstup\nresponse = json.loads(stdout)\n\n# PythonFunction node vyžaduje list položek jako návratovou hodnotu\nif isinstance(response, list):\n    return response\nelse:\n    return [response]\n"
+      },
+      "id": "2df54e00-4bda-4197-9dbd-00e52d01e8b0",
+      "name": "Int Squared",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\n\n# Připravíme payload: items je vestavěná proměnná n8n (list of dicts)\npayload = items\n\n# Spustíme externí skript s předáním JSON na stdin\nproc = subprocess.Popen(\n    ['python3', './scripts/example/02_findStr.py'],\n    stdin=subprocess.PIPE,\n    stdout=subprocess.PIPE,\n    stderr=subprocess.PIPE,\n    text=True,\n)\n\nstdout, stderr = proc.communicate(json.dumps(payload))\n\n# Pokud skript něco vyhodil na stderr, zalogujeme to\nif stderr:\n    print(stderr, file=sys.stderr)\n\n# Parsujeme JSON výstup\nresponse = json.loads(stdout)\n\n# PythonFunction node vyžaduje list položek jako návratovou hodnotu\nif isinstance(response, list):\n    return response\nelse:\n    return [response]\n"
+      },
+      "id": "58dce695-9cbe-4a45-bc0a-e8b0d4cf2e39",
+      "name": "Text Edit",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\n\n# Připravíme payload: items je vestavěná proměnná n8n (list of dicts)\npayload = items\n\n# Spustíme externí skript s předáním JSON na stdin\nproc = subprocess.Popen(\n    ['python3', './scripts/example/02_findBool.py'],\n    stdin=subprocess.PIPE,\n    stdout=subprocess.PIPE,\n    stderr=subprocess.PIPE,\n    text=True,\n)\n\nstdout, stderr = proc.communicate(json.dumps(payload))\n\n# Pokud skript něco vyhodil na stderr, zalogujeme to\nif stderr:\n    print(stderr, file=sys.stderr)\n\n# Parsujeme JSON výstup\nresponse = json.loads(stdout)\n\n# PythonFunction node vyžaduje list položek jako návratovou hodnotu\nif isinstance(response, list):\n    return response\nelse:\n    return [response]\n"
+      },
+      "id": "a5e60c76-8e29-44f2-aff1-a2214eff4d5c",
+      "name": "Switch Bool",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        520
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "844b4672-c700-4b2a-b8c4-67f05d85b994",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1340,
+        340
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "14014864-8762-4cdd-834f-403bc7be0955",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1580,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\n\n# items je seznam dictů vstupních dat\npayload = items\n\n# Spustíme externí skript bez čekání na výstup\nprocess = subprocess.Popen(\n    ['python3', './scripts/example/02_display_popup.py'],\n    stdin=subprocess.PIPE,\n    stdout=subprocess.DEVNULL,\n    stderr=subprocess.DEVNULL,\n    text=True,\n)\n# Pošleme JSON payload a hned zavřeme stdin\nprocess.stdin.write(json.dumps(payload))\nprocess.stdin.close()\n\n# Nečekáme na process.wait() – umožníme okamžité pokračování workflow\n\n# Vrátíme prázdný seznam, aby PythonFunction skončil bez chyby\nreturn []  # nebo return items, pokud chcete data zachovat ve workflow"
+      },
+      "id": "ac2b9d8c-f808-4faa-8750-fce07e217b0b",
+      "name": "Display Popup",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        380
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking \"Execute Workflow\"": {
+      "main": [
+        [
+          {
+            "node": "Set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set": {
+      "main": [
+        [
+          {
+            "node": "Int Squared",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Text Edit",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch Bool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Edit": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Int Squared": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Bool": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Display Popup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "b8a615a8-8759-4f3f-b0ed-68c829a36b25",
+  "id": "1",
+  "meta": {
+    "instanceId": "8ccdaa89fca22cee5bd08f2d0ce60f7cc2a69a2b099b2bcc4420151e0d465917"
+  },
+  "tags": []
+}

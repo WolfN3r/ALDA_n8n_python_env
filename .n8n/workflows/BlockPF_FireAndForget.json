@@ -1,0 +1,28 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\n\n# items je seznam dictů vstupních dat\npayload = items\n\n# Spustíme externí skript bez čekání na výstup\nprocess = subprocess.Popen(\n    ['python3', './scripts/\"your_path_to_script\".py'],\n    stdin=subprocess.PIPE,\n    stdout=subprocess.DEVNULL,\n    stderr=subprocess.DEVNULL,\n    text=True,\n)\n# Pošleme JSON payload a hned zavřeme stdin\nprocess.stdin.write(json.dumps(payload))\nprocess.stdin.close()\n\n# Nečekáme na process.wait() – umožníme okamžité pokračování workflow\n\n# Vrátíme prázdný seznam, aby PythonFunction skončil bez chyby\nreturn []  # nebo return items, pokud chcete data zachovat ve workflow"
+      },
+      "id": "53e3300c-ba72-4c71-821a-c5a95a0b8f52",
+      "name": "Fire and Forget",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        380
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {},
+  "active": false,
+  "settings": {},
+  "versionId": "0bbbd1fe-1b98-403f-a3be-daf8067f88eb",
+  "id": "2",
+  "meta": {
+    "instanceId": "8ccdaa89fca22cee5bd08f2d0ce60f7cc2a69a2b099b2bcc4420151e0d465917"
+  },
+  "tags": []
+}

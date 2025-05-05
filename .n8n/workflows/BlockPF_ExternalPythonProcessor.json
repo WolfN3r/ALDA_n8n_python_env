@@ -1,0 +1,28 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\n\n# Připravíme payload: items je vestavěná proměnná n8n (list of dicts)\npayload = items\n\n# Spustíme externí skript s předáním JSON na stdin\nproc = subprocess.Popen(\n    ['python3', './scripts/\"your_path_to_script\".py'],\n    stdin=subprocess.PIPE,\n    stdout=subprocess.PIPE,\n    stderr=subprocess.PIPE,\n    text=True,\n)\n\nstdout, stderr = proc.communicate(json.dumps(payload))\n\n# Pokud skript něco vyhodil na stderr, zalogujeme to\nif stderr:\n    print(stderr, file=sys.stderr)\n\n# Parsujeme JSON výstup\nresponse = json.loads(stdout)\n\n# PythonFunction node vyžaduje list položek jako návratovou hodnotu\nif isinstance(response, list):\n    return response\nelse:\n    return [response]\n"
+      },
+      "id": "53e3300c-ba72-4c71-821a-c5a95a0b8f52",
+      "name": "External Python Processor",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        380
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {},
+  "active": false,
+  "settings": {},
+  "versionId": "f4144b8e-6b20-46dc-a6cf-5ce4c448e5dc",
+  "id": "2",
+  "meta": {
+    "instanceId": "8ccdaa89fca22cee5bd08f2d0ce60f7cc2a69a2b099b2bcc4420151e0d465917"
+  },
+  "tags": []
+}
