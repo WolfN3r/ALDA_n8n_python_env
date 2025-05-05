@@ -16,8 +16,8 @@ build:
 	docker-compose build
 
 # Vytvoří .env soubor s proměnnou DISPLAY (pro Linux/macOS)
-env:
-	@echo DISPLAY=:0 > .env
+#env:
+#	@echo DISPLAY=:0 > .env
 
 # Povolí X11 pro root uživatele a vytvoří .env (pouze na Linux/macOS)
 x11-init: env
