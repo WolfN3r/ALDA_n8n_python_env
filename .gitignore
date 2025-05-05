@@ -1,0 +1,4 @@
+# n8n data a logy
+.n8n/*
+logs/*
+!logs/.gitkeep

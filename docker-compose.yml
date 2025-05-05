@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  n8n:
+    build: .
+    container_name: n8n-python
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./.n8n:/home/node/.n8n      # persistuje nastavení n8n
+      - ./scripts:/home/node/scripts # vaše Python skripty
+      - ./logs:/home/node/logs     # výstupní logy
+      # Pro X11 forwarding odkomentujte:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    environment:
+      - N8N_LOG_LEVEL=debug        # detailní logování
+      # Pro X11 forwarding odkomentujte:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
