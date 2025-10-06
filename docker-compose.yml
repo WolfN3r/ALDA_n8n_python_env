@@ -7,13 +7,47 @@ services:
     ports:
       - "5678:5678"
     volumes:
-      - ./n8n:/home/node/.n8n      # persistuje nastavení n8n
-      - ./scripts:/home/node/scripts # vaše Python skripty
-      - ./logs:/home/node/logs     # výstupní logy
-      # Pro X11 forwarding odkomentujte:
+      - ./n8n:/home/node/.n8n      # settings of n8n
+      - ./scripts:/home/node/scripts # python scripts
+      - ./logs:/home/node/logs     # output logs
+      # Pro X11 forwarding:
       - /tmp/.X11-unix:/tmp/.X11-unix
     environment:
-      - N8N_LOG_LEVEL=debug        # detailní logování
-      # Pro X11 forwarding odkomentujte:
+      - N8N_LOG_LEVEL=debug
+      # Increase Node.js memory for n8n
+      - NODE_OPTIONS=--max-old-space-size=4096
+      # Python execution settings
+      - EXECUTIONS_PROCESS=main
+      - EXECUTIONS_MODE=regular
+      # Pro X11 forwarding:
       - DISPLAY=host.docker.internal:0.0
       - QT_X11_NO_MITSHM=1
+      # Python unbuffered output
+      - PYTHONUNBUFFERED=1
+
+    # CRITICAL: Set memory limits
+    deploy:
+      resources:
+        limits:
+          memory: 7G  # Total container limit (留 1GB for system)
+        reservations:
+          memory: 2G  # Guaranteed memory
+
+    # Alternative syntax for older Docker versions
+    mem_limit: 7g
+    mem_reservation: 2g
+
+    # Set ulimits for the container
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+
+    # Disable swap to prevent performance issues
+    mem_swappiness: 0
+
+    # Use host network mode for better performance (optional)
+    # network_mode: "host"
