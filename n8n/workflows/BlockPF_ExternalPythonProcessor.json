@@ -1,17 +1,17 @@
 {
-  "name": "My workflow 2",
+  "name": "test02_JSONmemoryTest",
   "nodes": [
     {
       "parameters": {
-        "functionCode": "import json\nimport subprocess\nimport sys\n\n# Připravíme payload: items je vestavěná proměnná n8n (list of dicts)\npayload = items\n\n# Spustíme externí skript s předáním JSON na stdin\nproc = subprocess.Popen(\n    ['python3', './scripts/\"your_path_to_script\".py'],\n    stdin=subprocess.PIPE,\n    stdout=subprocess.PIPE,\n    stderr=subprocess.PIPE,\n    text=True,\n)\n\nstdout, stderr = proc.communicate(json.dumps(payload))\n\n# Pokud skript něco vyhodil na stderr, zalogujeme to\nif stderr:\n    print(stderr, file=sys.stderr)\n\n# Parsujeme JSON výstup\nresponse = json.loads(stdout)\n\n# PythonFunction node vyžaduje list položek jako návratovou hodnotu\nif isinstance(response, list):\n    return response\nelse:\n    return [response]\n"
+        "functionCode": "import json\nimport subprocess\nimport sys\nimport gc\n\ndef process_with_minimal_memory():\n    script_path = './scripts/example/scriptName.py'  # 👈 CHANGE ONLY THIS PATH\n    \n    # Convert items to single dict if it's a list\n    if isinstance(items, list) and len(items) == 1:\n        payload = items[0]\n    elif isinstance(items, list):\n        payload = {\"batch\": items}  # Wrap multiple items\n    else:\n        payload = items\n    \n    proc = subprocess.Popen(\n        ['python3', script_path],\n        stdin=subprocess.PIPE,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE,\n        text=True,\n    )\n    \n    # Send JSON efficiently\n    json_data = json.dumps(payload)\n    stdout, stderr = proc.communicate(json_data)\n    \n    # Cleanup input data immediately\n    del json_data, payload\n    gc.collect()\n    \n    if stderr:\n        print(stderr, file=sys.stderr)\n    \n    # Parse result\n    response = json.loads(stdout)\n    del stdout\n    \n    # Return in n8n format\n    if isinstance(response, list):\n        return response\n    else:\n        return [response]\n\n# Main execution\nresult = process_with_minimal_memory()\nreturn result\n"
       },
-      "id": "53e3300c-ba72-4c71-821a-c5a95a0b8f52",
-      "name": "External Python Processor",
+      "id": "40dd1b1b-5249-4bbb-8c7d-5aec8332db0d",
+      "name": "Python Processor",
       "type": "n8n-nodes-python.pythonFunction",
       "typeVersion": 1,
       "position": [
-        1000,
-        380
+        920,
+        520
       ]
     }
   ],
@@ -19,10 +19,10 @@
   "connections": {},
   "active": false,
   "settings": {},
-  "versionId": "f4144b8e-6b20-46dc-a6cf-5ce4c448e5dc",
-  "id": "2",
+  "versionId": "783e00ca-9445-4bbd-8d6b-ba010e1668e1",
+  "id": "1",
   "meta": {
-    "instanceId": "8ccdaa89fca22cee5bd08f2d0ce60f7cc2a69a2b099b2bcc4420151e0d465917"
+    "instanceId": "c223901f6c15b8fb487054350397584634967a389fd3bdab4186bd739585c792"
   },
   "tags": []
 }

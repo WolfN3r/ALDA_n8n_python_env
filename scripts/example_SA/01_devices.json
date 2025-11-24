@@ -1,0 +1,263 @@
+{
+  "project": {
+    "name": "SIMPLIFIED_CASE",
+    "description": "Simplified analog circuit with 3 blocks and multiple variants",
+    "version": "1.0"
+  },
+  "devices": [
+    {
+      "name": "nmos_basic",
+      "deviceType": "NMOS",
+      "libName": "gpdk090",
+      "layers": {
+        "active": [
+          { "x_min": -0.28, "y_min": 0.0, "x_max": 6.6, "y_max": 10.0 }
+        ],
+        "poly": [
+          { "x_min": 0.0, "x_max": 3.0, "y_min": 0.0, "y_max": 10.0 },
+          { "x_min": 3.32, "x_max": 6.32, "y_min": 0.0, "y_max": 10.0 }
+        ],
+        "poly_pocket": []
+      },
+      "crossSection": {
+        "active": [ [ -0.28, 6.6 ] ],
+        "poly": [ [ 0.0, 3.0 ], [ 3.32, 6.32 ] ],
+        "poly_pocket": []
+      },
+      "processParameters": {
+        "a2p": 0.28,
+        "p2p": 0.32,
+        "x_total": 6.88,
+        "y_total": 10.0
+      },
+      "pCellEnvelope": {
+        "x_min": -0.28,
+        "x_max": 6.6,
+        "y_min": 0.0,
+        "y_max": 10.0
+      }
+    },
+    {
+      "name": "pmos_basic",
+      "deviceType": "PMOS",
+      "libName": "gpdk090",
+      "layers": {
+        "active": [
+          { "x_min": -0.35, "y_min": 0.0, "x_max": 7.2, "y_max": 12.0 }
+        ],
+        "poly": [
+          { "x_min": 0.0, "x_max": 3.5, "y_min": 0.0, "y_max": 12.0 },
+          { "x_min": 3.85, "x_max": 7.35, "y_min": 0.0, "y_max": 12.0 }
+        ],
+        "poly_pocket": []
+      },
+      "crossSection": {
+        "active": [ [ -0.35, 7.2 ] ],
+        "poly": [ [ 0.0, 3.5 ], [ 3.85, 7.35 ] ],
+        "poly_pocket": []
+      },
+      "processParameters": {
+        "a2p": 0.35,
+        "p2p": 0.35,
+        "x_total": 7.55,
+        "y_total": 12.0
+      },
+      "pCellEnvelope": {
+        "x_min": -0.35,
+        "x_max": 7.2,
+        "y_min": 0.0,
+        "y_max": 12.0
+      }
+    }
+  ],
+  "blocks": [
+    {
+      "name": "BLOCK_A",
+      "merge_device_names": [
+        "MA1",
+        "MA2"
+      ],
+      "variants": [
+        {
+          "width": 5.5,
+          "height": 8.0,
+          "column_multiple": 4,
+          "row_multiple": 2,
+          "is_default": true
+        },
+        {
+          "width": 11.0,
+          "height": 4.0,
+          "column_multiple": 8,
+          "row_multiple": 1,
+          "is_default": false
+        },
+        {
+          "width": 2.75,
+          "height": 16.0,
+          "column_multiple": 2,
+          "row_multiple": 4,
+          "is_default": false
+        }
+      ],
+      "device_type": "PMOS",
+      "pins": {
+        "drain": [ "out_a1", "out_a2" ],
+        "gate": [ "in_a1", "in_a2" ],
+        "source": [ "vdd_a", "vdd_a" ],
+        "bulk": [ "vdd!", "vdd!" ]
+      },
+      "params": {
+        "label": "BLOCK_A"
+      },
+      "symmetry": {
+        "type": "self_symmetric",
+        "description": "BLOCK_A must be placed on symmetry axis"
+      }
+    },
+    {
+      "name": "BLOCK_B",
+      "variants": [
+        {
+          "width": 3.2,
+          "height": 6.5,
+          "column_multiple": 2,
+          "row_multiple": 2,
+          "is_default": true
+        },
+        {
+          "width": 6.4,
+          "height": 3.25,
+          "column_multiple": 4,
+          "row_multiple": 1,
+          "is_default": false
+        },
+        {
+          "width": 1.6,
+          "height": 13.0,
+          "column_multiple": 1,
+          "row_multiple": 4,
+          "is_default": false
+        },
+        {
+          "width": 9.6,
+          "height": 2.17,
+          "column_multiple": 6,
+          "row_multiple": 1,
+          "is_default": false
+        }
+      ],
+      "device_type": "NMOS",
+      "pins": {
+        "drain": [ "out_b" ],
+        "gate": [ "in_b" ],
+        "source": [ "gnd_b" ],
+        "bulk": [ "gnd!" ]
+      },
+      "params": {
+        "label": "BLOCK_B"
+      },
+      "symmetry": {
+        "type": "pair_symmetric",
+        "pair_with": "BLOCK_C",
+        "description": "BLOCK_B and BLOCK_C must be placed symmetrically"
+      }
+    },
+    {
+      "name": "BLOCK_C",
+      "variants": [
+        {
+          "width": 4.8,
+          "height": 9.2,
+          "column_multiple": 3,
+          "row_multiple": 3,
+          "is_default": true
+        },
+        {
+          "width": 14.4,
+          "height": 3.07,
+          "column_multiple": 9,
+          "row_multiple": 1,
+          "is_default": false
+        },
+        {
+          "width": 7.2,
+          "height": 6.13,
+          "column_multiple": 6,
+          "row_multiple": 2,
+          "is_default": false
+        },
+        {
+          "width": 2.4,
+          "height": 18.4,
+          "column_multiple": 2,
+          "row_multiple": 6,
+          "is_default": false
+        },
+        {
+          "width": 1.6,
+          "height": 27.6,
+          "column_multiple": 1,
+          "row_multiple": 9,
+          "is_default": false
+        }
+      ],
+      "device_type": "PMOS",
+      "pins": {
+        "drain": [ "out_c" ],
+        "gate": [ "in_c" ],
+        "source": [ "vdd_c" ],
+        "bulk": [ "vdd!" ]
+      },
+      "params": {
+        "label": "BLOCK_C"
+      },
+      "symmetry": {
+        "type": "pair_symmetric",
+        "pair_with": "BLOCK_B",
+        "description": "BLOCK_B and BLOCK_C must be placed symmetrically"
+      }
+    },
+    {
+      "name": "BLOCK_D",
+      "variants": [
+        {
+          "width": 10.2,
+          "height": 8.5,
+          "column_multiple": 2,
+          "row_multiple": 2,
+          "is_default": true
+        },
+        {
+          "width": 20.4,
+          "height": 4.3,
+          "column_multiple": 4,
+          "row_multiple": 1,
+          "is_default": false
+        },
+        {
+          "width": 5.1,
+          "height": 21.3,
+          "column_multiple": 1,
+          "row_multiple": 4,
+          "is_default": false
+        }
+      ],
+      "device_type": "NMOS",
+      "pins": {
+        "drain": [ "out_b" ],
+        "gate": [ "in_b" ],
+        "source": [ "gnd_b" ],
+        "bulk": [ "gnd!" ]
+      },
+      "params": {
+        "label": "BLOCK_D"
+      },
+      "symmetry": {
+        "type": "pair_symmetric",
+        "pair_with": "BLOCK_C",
+        "description": "BLOCK_B and BLOCK_C must be placed symmetrically"
+      }
+    }
+  ]
+}
