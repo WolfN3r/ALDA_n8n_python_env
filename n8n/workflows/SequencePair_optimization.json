@@ -1,0 +1,300 @@
+{
+  "name": "SequencePair_optimization",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a69017be-10ea-4078-971f-90a58cbc35ec",
+      "name": "When clicking \"Execute Workflow\"",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\nimport gc\n\ndef process_with_minimal_memory():\n    script_path = './scripts/example_SP/01_loadDevices.py'  # 👈 CHANGE ONLY THIS PATH\n    \n    # Convert items to single dict if it's a list\n    if isinstance(items, list) and len(items) == 1:\n        payload = items[0]\n    elif isinstance(items, list):\n        payload = {\"batch\": items}  # Wrap multiple items\n    else:\n        payload = items\n    \n    proc = subprocess.Popen(\n        ['python3', script_path],\n        stdin=subprocess.PIPE,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE,\n        text=True,\n    )\n    \n    # Send JSON efficiently\n    json_data = json.dumps(payload)\n    stdout, stderr = proc.communicate(json_data)\n    \n    # Cleanup input data immediately\n    del json_data, payload\n    gc.collect()\n    \n    if stderr:\n        print(stderr, file=sys.stderr)\n    \n    # Parse result\n    response = json.loads(stdout)\n    del stdout\n    \n    # Return in n8n format\n    if isinstance(response, list):\n        return response\n    else:\n        return [response]\n\n# Main execution\nresult = process_with_minimal_memory()\nreturn result\n"
+      },
+      "id": "23bb35f1-9240-4b91-ad93-530e579ef9de",
+      "name": "Load JSON file",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        400,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\nimport gc\n\ndef process_with_minimal_memory():\n    script_path = './scripts/example_SP/02_createSP.py'  # 👈 CHANGE ONLY THIS PATH\n    \n    # Convert items to single dict if it's a list\n    if isinstance(items, list) and len(items) == 1:\n        payload = items[0]\n    elif isinstance(items, list):\n        payload = {\"batch\": items}  # Wrap multiple items\n    else:\n        payload = items\n    \n    proc = subprocess.Popen(\n        ['python3', script_path],\n        stdin=subprocess.PIPE,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE,\n        text=True,\n    )\n    \n    # Send JSON efficiently\n    json_data = json.dumps(payload)\n    stdout, stderr = proc.communicate(json_data)\n    \n    # Cleanup input data immediately\n    del json_data, payload\n    gc.collect()\n    \n    if stderr:\n        print(stderr, file=sys.stderr)\n    \n    # Parse result\n    response = json.loads(stdout)\n    del stdout\n    \n    # Return in n8n format\n    if isinstance(response, list):\n        return response\n    else:\n        return [response]\n\n# Main execution\nresult = process_with_minimal_memory()\nreturn result\n"
+      },
+      "id": "c582654a-d45e-4fa3-b7ea-01b22d4a2d66",
+      "name": "Create B* tree",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        580,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\nimport gc\n\ndef process_with_minimal_memory():\n    script_path = './scripts/example_SP/03_simulatedAnnealing.py'  # 👈 CHANGE ONLY THIS PATH\n    \n    # Convert items to single dict if it's a list\n    if isinstance(items, list) and len(items) == 1:\n        payload = items[0]\n    elif isinstance(items, list):\n        payload = {\"batch\": items}  # Wrap multiple items\n    else:\n        payload = items\n    \n    proc = subprocess.Popen(\n        ['python3', script_path],\n        stdin=subprocess.PIPE,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE,\n        text=True,\n    )\n    \n    # Send JSON efficiently\n    json_data = json.dumps(payload)\n    stdout, stderr = proc.communicate(json_data)\n    \n    # Cleanup input data immediately\n    del json_data, payload\n    gc.collect()\n    \n    if stderr:\n        print(stderr, file=sys.stderr)\n    \n    # Parse result\n    response = json.loads(stdout)\n    del stdout\n    \n    # Return in n8n format\n    if isinstance(response, list):\n        return response\n    else:\n        return [response]\n\n# Main execution\nresult = process_with_minimal_memory()\nreturn result\n"
+      },
+      "id": "4601e101-f23f-43df-a6d9-875acc3963f6",
+      "name": "Simulated Annealing 01",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -80
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d4e96f3b-b7c3-43cf-b771-dccf50a57310",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1020,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all input items (n8n processes each solution separately)\nconst allInputs = $input.all();\n\nlet bestSolution = null;\nlet minFitness = Infinity;\n\n// Loop through all input items\nfor (let i = 0; i < allInputs.length; i++) {\n    const solution = allInputs[i].json;\n    \n    // Check if optimization_results exists and has fitness_function\n    if (solution && \n        solution.optimization_results && \n        typeof solution.optimization_results.fitness_function === 'number') {\n        \n        const fitness = solution.optimization_results.fitness_function;\n        \n        if (fitness < minFitness) {\n            minFitness = fitness;\n            bestSolution = solution;\n        }\n    }\n}\n\n// Ensure we return a valid object\nif (bestSolution === null) {\n    return [{ json: { error: \"No valid solution found\" } }];\n}\n\nreturn [{ json: bestSolution }];"
+      },
+      "id": "60fc8f24-8647-4392-bba6-707d574a9c12",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        180
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "46334cd4-1193-4f4b-bb53-fe49e3523117",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1020,
+        280
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b655761f-e3bb-461d-a8c7-f58b0507f3a6",
+      "name": "Merge2",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1240,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\nimport gc\n\ndef process_with_minimal_memory():\n    script_path = './scripts/example_SP/SP_visualizer.py'  # 👈 CHANGE ONLY THIS PATH\n    \n    # Convert items to single dict if it's a list\n    if isinstance(items, list) and len(items) == 1:\n        payload = items[0]\n    elif isinstance(items, list):\n        payload = {\"batch\": items}  # Wrap multiple items\n    else:\n        payload = items\n    \n    proc = subprocess.Popen(\n        ['python3', script_path],\n        stdin=subprocess.PIPE,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE,\n        text=True,\n    )\n    \n    # Send JSON efficiently\n    json_data = json.dumps(payload)\n    stdout, stderr = proc.communicate(json_data)\n    \n    # Cleanup input data immediately\n    del json_data, payload\n    gc.collect()\n    \n    if stderr:\n        print(stderr, file=sys.stderr)\n    \n    # Parse result\n    response = json.loads(stdout)\n    del stdout\n    \n    # Return in n8n format\n    if isinstance(response, list):\n        return response\n    else:\n        return [response]\n\n# Main execution\nresult = process_with_minimal_memory()\nreturn result\n"
+      },
+      "id": "6c3f06b9-d7bd-4d33-929d-1ab589da5a73",
+      "name": "Visualizer",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\nimport gc\n\ndef process_with_minimal_memory():\n    script_path = './scripts/example_SP/03_simulatedAnnealing.py'  # 👈 CHANGE ONLY THIS PATH\n    \n    # Convert items to single dict if it's a list\n    if isinstance(items, list) and len(items) == 1:\n        payload = items[0]\n    elif isinstance(items, list):\n        payload = {\"batch\": items}  # Wrap multiple items\n    else:\n        payload = items\n    \n    proc = subprocess.Popen(\n        ['python3', script_path],\n        stdin=subprocess.PIPE,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE,\n        text=True,\n    )\n    \n    # Send JSON efficiently\n    json_data = json.dumps(payload)\n    stdout, stderr = proc.communicate(json_data)\n    \n    # Cleanup input data immediately\n    del json_data, payload\n    gc.collect()\n    \n    if stderr:\n        print(stderr, file=sys.stderr)\n    \n    # Parse result\n    response = json.loads(stdout)\n    del stdout\n    \n    # Return in n8n format\n    if isinstance(response, list):\n        return response\n    else:\n        return [response]\n\n# Main execution\nresult = process_with_minimal_memory()\nreturn result\n"
+      },
+      "id": "edb6c344-6444-498f-a675-2ab21ee96b1a",
+      "name": "Simulated Annealing 02",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        800,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\nimport gc\n\ndef process_with_minimal_memory():\n    script_path = './scripts/example_SP/03_simulatedAnnealing.py'  # 👈 CHANGE ONLY THIS PATH\n    \n    # Convert items to single dict if it's a list\n    if isinstance(items, list) and len(items) == 1:\n        payload = items[0]\n    elif isinstance(items, list):\n        payload = {\"batch\": items}  # Wrap multiple items\n    else:\n        payload = items\n    \n    proc = subprocess.Popen(\n        ['python3', script_path],\n        stdin=subprocess.PIPE,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE,\n        text=True,\n    )\n    \n    # Send JSON efficiently\n    json_data = json.dumps(payload)\n    stdout, stderr = proc.communicate(json_data)\n    \n    # Cleanup input data immediately\n    del json_data, payload\n    gc.collect()\n    \n    if stderr:\n        print(stderr, file=sys.stderr)\n    \n    # Parse result\n    response = json.loads(stdout)\n    del stdout\n    \n    # Return in n8n format\n    if isinstance(response, list):\n        return response\n    else:\n        return [response]\n\n# Main execution\nresult = process_with_minimal_memory()\nreturn result\n"
+      },
+      "id": "75ef1993-210e-467a-915b-198887bd7bf9",
+      "name": "Simulated Annealing 03",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        800,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "import json\nimport subprocess\nimport sys\nimport gc\n\ndef process_with_minimal_memory():\n    script_path = './scripts/example_SP/03_simulatedAnnealing.py'  # 👈 CHANGE ONLY THIS PATH\n    \n    # Convert items to single dict if it's a list\n    if isinstance(items, list) and len(items) == 1:\n        payload = items[0]\n    elif isinstance(items, list):\n        payload = {\"batch\": items}  # Wrap multiple items\n    else:\n        payload = items\n    \n    proc = subprocess.Popen(\n        ['python3', script_path],\n        stdin=subprocess.PIPE,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE,\n        text=True,\n    )\n    \n    # Send JSON efficiently\n    json_data = json.dumps(payload)\n    stdout, stderr = proc.communicate(json_data)\n    \n    # Cleanup input data immediately\n    del json_data, payload\n    gc.collect()\n    \n    if stderr:\n        print(stderr, file=sys.stderr)\n    \n    # Parse result\n    response = json.loads(stdout)\n    del stdout\n    \n    # Return in n8n format\n    if isinstance(response, list):\n        return response\n    else:\n        return [response]\n\n# Main execution\nresult = process_with_minimal_memory()\nreturn result\n"
+      },
+      "id": "8a87c13c-281e-41df-85a7-a71a95d6d345",
+      "name": "Simulated Annealing 04",
+      "type": "n8n-nodes-python.pythonFunction",
+      "typeVersion": 1,
+      "position": [
+        800,
+        420
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking \"Execute Workflow\"": {
+      "main": [
+        [
+          {
+            "node": "Load JSON file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create B* tree": {
+      "main": [
+        [
+          {
+            "node": "Simulated Annealing 01",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Simulated Annealing 02",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Simulated Annealing 03",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Simulated Annealing 04",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simulated Annealing 01": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load JSON file": {
+      "main": [
+        [
+          {
+            "node": "Create B* tree",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Visualizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simulated Annealing 02": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Simulated Annealing 03": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simulated Annealing 04": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "7ebf89f2-3cfb-4f8b-bb06-f4fab248977f",
+  "id": "1",
+  "meta": {
+    "instanceId": "4f1f96316e91b41acc434b19e3ca0688c8758a9ac02b7c6e0da9dcc7a538e12b"
+  },
+  "tags": []
+}
