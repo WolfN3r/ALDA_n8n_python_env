@@ -11,7 +11,7 @@ import random
 import json
 from n8n_json_handler import create_n8n_processor
 
-# SA SETTINGS - ADJUSTED FOR BETTER CONVERGENCE
+# SA SETTINGS
 INITIAL_TEMP = 1000.0
 FINAL_TEMP = 0.01
 COOLING_RATE = 0.999  # Slower cooling = more iterations

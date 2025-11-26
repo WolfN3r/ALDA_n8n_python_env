@@ -34,9 +34,6 @@ def generate_distinct_colors(num_colors):
 def process_bstar_data(json_data):
     """Process and visualize B*-tree data"""
 
-    # Node radius parameter - adjust this to change node size
-    NODE_RADIUS = 0.069
-
     try:
         # Input validation
         if not json_data:
@@ -123,30 +120,41 @@ def process_bstar_data(json_data):
 
         draw_blocks(bstar_tree['root'])
 
-        # Right: Tree structure with fractal spacing
+        # Right: Tree structure with adjustable fractal spacing
         ax2.set_title('B*-Tree Structure')
         ax2.set_aspect('equal')
         ax2.axis('off')
 
         positions = {}
+        node_depths = {}  # Track depth of each node
+
+        # Adjustable fractal spacing parameters
+        FRACTAL_MULTIPLIER = 1.5  # Controls spacing reduction per level (lower = gentler fractal)
+        BASE_SPACING = 1.0  # Initial spacing at root level
+
+        # Adaptive node sizing parameters (easily adjustable)
+        # Formula: size_at_depth = BASE_SIZE * (DECAY_RATE ^ (depth - 1))
+        # Example with NODE_DECAY_RATE=0.80: L1=0.08, L2=0.064, L3=0.051, L7=0.021
+        BASE_NODE_RADIUS = 0.1  # Starting radius at root node (level 1)
+        NODE_DECAY_RATE = 0.80  # Size multiplier per level (0.80 = 20% smaller each level)
+        BASE_FONT_SIZE = 14  # Starting font size at root
+        FONT_DECAY_RATE = 0.85  # Font size multiplier per level
 
         def calc_positions(node, level=1, v_offset=0, h_offset=0):
             if not node or 'name' not in node:
                 return v_offset
 
-            # Position current node
             positions[node['name']] = (h_offset, v_offset)
+            node_depths[node['name']] = level  # Track depth for sizing
 
-            # Calculate spacing for this level: 1/2^(level-1)
-            spacing = 1.0 / (2 ** (level - 1))
+            # Calculate spacing: BASE_SPACING / (FRACTAL_MULTIPLIER^(level-1))
+            spacing = BASE_SPACING / (FRACTAL_MULTIPLIER ** (level - 1))
 
             current_v_offset = v_offset
 
-            # Process x_child (right)
             if 'x_child' in node and node['x_child']:
                 calc_positions(node['x_child'], level + 1, current_v_offset, h_offset + spacing)
 
-            # Process y_child (up)
             if 'y_child' in node and node['y_child']:
                 current_v_offset += spacing
                 calc_positions(node['y_child'], level + 1, current_v_offset, h_offset)
@@ -161,22 +169,23 @@ def process_bstar_data(json_data):
                 return
 
             px, py = positions[node['name']]
+            parent_depth = node_depths[node['name']]
+            parent_radius = BASE_NODE_RADIUS * (NODE_DECAY_RATE ** (parent_depth - 1))
 
             if 'x_child' in node and node['x_child'] and 'name' in node['x_child']:
                 child_name = node['x_child']['name']
                 if child_name in positions:
                     cx, cy = positions[child_name]
-                    # Calculate connection points on circle edges
+                    child_depth = node_depths[child_name]
+                    child_radius = BASE_NODE_RADIUS * (NODE_DECAY_RATE ** (child_depth - 1))
+
                     dx, dy = cx - px, cy - py
                     length = (dx ** 2 + dy ** 2) ** 0.5
                     if length > 0:
-                        # Start from edge of parent circle
-                        start_x = px + (dx / length) * NODE_RADIUS
-                        start_y = py + (dy / length) * NODE_RADIUS
-                        # End at edge of child circle
-                        end_x = cx - (dx / length) * NODE_RADIUS
-                        end_y = cy - (dy / length) * NODE_RADIUS
-                        # Draw blue arrow for x_child
+                        start_x = px + (dx / length) * parent_radius
+                        start_y = py + (dy / length) * parent_radius
+                        end_x = cx - (dx / length) * child_radius
+                        end_y = cy - (dy / length) * child_radius
                         ax2.annotate('', xy=(end_x, end_y), xytext=(start_x, start_y),
                                      arrowprops=dict(arrowstyle='->', color='blue', lw=2))
                 draw_connections(node['x_child'])
@@ -185,17 +194,16 @@ def process_bstar_data(json_data):
                 child_name = node['y_child']['name']
                 if child_name in positions:
                     cx, cy = positions[child_name]
-                    # Calculate connection points on circle edges
+                    child_depth = node_depths[child_name]
+                    child_radius = BASE_NODE_RADIUS * (NODE_DECAY_RATE ** (child_depth - 1))
+
                     dx, dy = cx - px, cy - py
                     length = (dx ** 2 + dy ** 2) ** 0.5
                     if length > 0:
-                        # Start from edge of parent circle
-                        start_x = px + (dx / length) * NODE_RADIUS
-                        start_y = py + (dy / length) * NODE_RADIUS
-                        # End at edge of child circle
-                        end_x = cx - (dx / length) * NODE_RADIUS
-                        end_y = cy - (dy / length) * NODE_RADIUS
-                        # Draw green arrow for y_child
+                        start_x = px + (dx / length) * parent_radius
+                        start_y = py + (dy / length) * parent_radius
+                        end_x = cx - (dx / length) * child_radius
+                        end_y = cy - (dy / length) * child_radius
                         ax2.annotate('', xy=(end_x, end_y), xytext=(start_x, start_y),
                                      arrowprops=dict(arrowstyle='->', color='green', lw=2))
                 draw_connections(node['y_child'])
@@ -204,11 +212,15 @@ def process_bstar_data(json_data):
 
         # Draw nodes AFTER connections (in front of connections)
         for name, (x, y) in positions.items():
+            depth = node_depths[name]
+            node_radius = BASE_NODE_RADIUS * (NODE_DECAY_RATE ** (depth - 1))
+            font_size = BASE_FONT_SIZE * (FONT_DECAY_RATE ** (depth - 1))
+
             color = block_colors.get(name, '#CCCCCC')
-            circle = Circle((x, y), NODE_RADIUS, facecolor=color, edgecolor='black', linewidth=1.5)
+            circle = Circle((x, y), node_radius, facecolor=color, edgecolor='black', linewidth=1.5)
             ax2.add_patch(circle)
             ax2.text(x, y, name.replace('BLOCK_', ''), ha='center', va='center',
-                     fontweight='bold', fontsize=8)
+                     fontweight='bold', fontsize=max(5, int(font_size)))
 
         if positions:
             min_x = min(pos[0] for pos in positions.values())
