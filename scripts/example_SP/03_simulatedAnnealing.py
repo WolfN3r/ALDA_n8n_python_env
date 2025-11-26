@@ -8,18 +8,21 @@ Sequence-Pair Simulated Annealing Optimizer
 
 import math
 import random
+import json
 from n8n_json_handler import create_n8n_processor
 
-# SA SETTINGS
+# SA SETTINGS - ADJUSTED FOR BETTER CONVERGENCE
 INITIAL_TEMP = 1000.0
-FINAL_TEMP = 0.5
-COOLING_RATE = 0.90
-MAX_ITERATIONS = 1000
+FINAL_TEMP = 0.01
+COOLING_RATE = 0.999  # Slower cooling = more iterations
+MAX_ITERATIONS = 50000  # Much higher limit
 
+# COST FUNCTION WEIGHTS
 AREA_WEIGHT = 10.0
-DEAD_SPACE_WEIGHT = 100.0
-ASPECT_WEIGHT = 10.0
+DEAD_SPACE_WEIGHT = 1000.0
+ASPECT_WEIGHT = 1000.0  # High penalty for aspect ratio violations
 TARGET_ASPECT_RATIO = 1.0
+MAX_ASPECT_RATIO = 1.5  # New: Maximum allowed aspect ratio
 
 
 def extract_variants(json_data):
@@ -70,25 +73,50 @@ def initial_variant_indices(variants, json_data):
 
 
 def decode_sequence_pair(r_plus, r_minus, variants, var_idx):
-    """Murata-style O(n^2) decoding into non-overlapping placement."""
-    pos_p = {b: i for i, b in enumerate(r_plus)}
-    pos_m = {b: i for i, b in enumerate(r_minus)}
+    """
+    Constraint graph method - eliminates dead space.
+    """
+    if not r_plus:
+        return {}
+
+    pos_plus = {block: i for i, block in enumerate(r_plus)}
+    pos_minus = {block: i for i, block in enumerate(r_minus)}
+
+    dims = {}
+    for block in r_plus:
+        v = variants[block][var_idx[block]]
+        dims[block] = {"width": v["width"], "height": v["height"]}
+
+    # X coordinates (horizontal constraints)
+    x_coords = {}
+    for block in r_plus:
+        x = 0.0
+        for other in r_plus:
+            if other != block:
+                # other is LEFT of block
+                if pos_plus[other] < pos_plus[block] and pos_minus[other] < pos_minus[block]:
+                    x = max(x, x_coords.get(other, 0.0) + dims[other]["width"])
+        x_coords[block] = x
+
+    # Y coordinates (vertical constraints)
+    y_coords = {}
+    for block in r_plus:
+        y = 0.0
+        for other in r_plus:
+            if other != block:
+                # other is BELOW block
+                if pos_plus[other] < pos_plus[block] and pos_minus[other] > pos_minus[block]:
+                    y = max(y, y_coords.get(other, 0.0) + dims[other]["height"])
+        y_coords[block] = y
 
     placement = {}
-    for b in r_plus:
-        w = variants[b][var_idx[b]]["width"]
-        h = variants[b][var_idx[b]]["height"]
-        x = 0.0
-        y = 0.0
-        for a, pa in placement.items():
-            # a left of b
-            if pos_p[a] < pos_p[b] and pos_m[a] < pos_m[b]:
-                x = max(x, pa["x_min"] + pa["width"])
-            # a below b
-            if pos_p[a] < pos_p[b] and pos_m[a] > pos_m[b]:
-                y = max(y, pa["y_min"] + pa["height"])
+    for block in r_plus:
+        x = x_coords[block]
+        y = y_coords[block]
+        w = dims[block]["width"]
+        h = dims[block]["height"]
 
-        placement[b] = {
+        placement[block] = {
             "x_min": x,
             "y_min": y,
             "width": w,
@@ -101,7 +129,7 @@ def decode_sequence_pair(r_plus, r_minus, variants, var_idx):
 
 
 def evaluate_placement(placement):
-    """Compute area, dead space, aspect ratio and fitness."""
+    """Compute fitness with aspect ratio constraint."""
     if not placement:
         return float("inf"), {}, {}
 
@@ -117,12 +145,21 @@ def evaluate_placement(placement):
     total_area = max_x * max_y if max_x > 0 and max_y > 0 else 0.0
     dead_space = max(total_area - used_area, 0.0)
     dead_space_ratio = (dead_space / total_area * 100.0) if total_area > 0 else 0.0
-    aspect_ratio = (max_x / max_y) if max_y > 0 else 0.0
+    aspect_ratio = (max(max_x,max_y)/min(max_x,max_y)) if min(max_x,max_y) > 0 else 0.0
+
+    # Aspect ratio penalty
+    aspect_penalty = 0.0
+    if aspect_ratio > MAX_ASPECT_RATIO:
+        # Heavy penalty for exceeding max aspect ratio
+        aspect_penalty = ASPECT_WEIGHT * 1000.0 * (aspect_ratio - MAX_ASPECT_RATIO)
+    else:
+        # Normal penalty for deviation from target
+        aspect_penalty = ASPECT_WEIGHT * abs(aspect_ratio - TARGET_ASPECT_RATIO)
 
     fitness = (
-        AREA_WEIGHT * total_area +
-        DEAD_SPACE_WEIGHT * dead_space_ratio +
-        ASPECT_WEIGHT * abs(aspect_ratio - TARGET_ASPECT_RATIO)
+            AREA_WEIGHT * total_area +
+            DEAD_SPACE_WEIGHT * dead_space_ratio +
+            aspect_penalty
     )
 
     metrics = {
@@ -132,7 +169,8 @@ def evaluate_placement(placement):
         "dead_space_percentage": dead_space_ratio,
         "aspect_ratio": aspect_ratio,
         "placement_width": max_x,
-        "placement_height": max_y
+        "placement_height": max_y,
+        "aspect_ratio_valid": aspect_ratio <= MAX_ASPECT_RATIO
     }
 
     return fitness, metrics, {"max_x": max_x, "max_y": max_y}
@@ -140,7 +178,6 @@ def evaluate_placement(placement):
 
 def random_neighbor_state(r_plus, r_minus, var_idx, variants):
     """Generate neighbor by swapping in SP or changing variant."""
-    # shallow copies
     new_rp = list(r_plus)
     new_rm = list(r_minus)
     new_var_idx = dict(var_idx)
@@ -154,7 +191,6 @@ def random_neighbor_state(r_plus, r_minus, var_idx, variants):
         i, j = random.sample(range(len(new_rm)), 2)
         new_rm[i], new_rm[j] = new_rm[j], new_rm[i]
     else:
-        # change variant of random block
         name = random.choice(list(variants.keys()))
         n_var = len(variants[name])
         if n_var > 1:
@@ -176,9 +212,8 @@ def sa_optimize(json_data):
     r_plus, r_minus = initial_sequence_pair(block_names, json_data)
     var_idx = initial_variant_indices(variants, json_data)
 
-    # initial solution
     placement = decode_sequence_pair(r_plus, r_minus, variants, var_idx)
-    cur_fit, cur_metrics, cur_bounds = evaluate_placement(placement)
+    cur_fit, cur_metrics, _ = evaluate_placement(placement)
 
     best_rp = list(r_plus)
     best_rm = list(r_minus)
@@ -189,6 +224,7 @@ def sa_optimize(json_data):
 
     T = INITIAL_TEMP
     iterations = 0
+    accepted_moves = 0
 
     while T > FINAL_TEMP and iterations < MAX_ITERATIONS:
         rpn, rmn, vin = random_neighbor_state(r_plus, r_minus, var_idx, variants)
@@ -196,12 +232,13 @@ def sa_optimize(json_data):
         fit_n, met_n, _ = evaluate_placement(pl_n)
 
         delta = fit_n - cur_fit
-        accept = delta < 0 or random.random() < math.exp(-delta / T if T > 0 else -1e9)
+        accept = delta < 0 or (T > 0 and random.random() < math.exp(-delta / T))
 
         if accept:
             r_plus, r_minus, var_idx = rpn, rmn, vin
             cur_fit, cur_metrics = fit_n, met_n
             placement = pl_n
+            accepted_moves += 1
 
             if fit_n < best_fit:
                 best_fit = fit_n
@@ -214,7 +251,7 @@ def sa_optimize(json_data):
         iterations += 1
         T *= COOLING_RATE
 
-    # Build placement dict with required fields
+    # Build UTF-8 safe output
     placement_out = {}
     for name, p in best_placement.items():
         placement_out[name] = {
@@ -226,17 +263,12 @@ def sa_optimize(json_data):
             "height": round(p["height"], 2)
         }
 
-    # Update JSON
-    result = dict(json_data)  # shallow copy is enough
-
+    result = dict(json_data)
     result["sequence_pair"] = {
         "r_plus": best_rp,
         "r_minus": best_rm,
         "placement": placement_out
     }
-
-    max_x = best_metrics["placement_width"]
-    max_y = best_metrics["placement_height"]
 
     result["optimization_results"] = {
         "fitness_function": round(best_fit, 2),
@@ -245,14 +277,18 @@ def sa_optimize(json_data):
         "dead_space": round(best_metrics["dead_space"], 2),
         "dead_space_percentage": round(best_metrics["dead_space_percentage"], 2),
         "aspect_ratio": round(best_metrics["aspect_ratio"], 2),
-        "placement_width": round(max_x, 2),
-        "placement_height": round(max_y, 2),
+        "aspect_ratio_valid": best_metrics["aspect_ratio_valid"],
+        "max_aspect_ratio": MAX_ASPECT_RATIO,
+        "placement_width": round(best_metrics["placement_width"], 2),
+        "placement_height": round(best_metrics["placement_height"], 2),
         "actual_iterations": iterations,
+        "accepted_moves": accepted_moves,
+        "acceptance_rate": round(accepted_moves / iterations * 100, 2) if iterations > 0 else 0,
         "optimization_method": "simulated_annealing_sequence_pair"
     }
 
-    # n8n_json_handler already ensures UTF-8-safe I/O
-    return result
+    # Ensure UTF-8 encoding
+    return json.loads(json.dumps(result, ensure_ascii=False))
 
 
 if __name__ == "__main__":
